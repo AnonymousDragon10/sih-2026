@@ -1,0 +1,408 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.35);
+  --glass-shadow: 0 8px 32px rgba(51, 128, 252, 0.15);
+  --glass-blur: blur(16px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: linear-gradient(135deg, #eef6ff 0%, #d9eaff 30%, #cffafe 60%, #eef6ff 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: #1a388f;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Animated background blobs */
+.bg-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bg-blob-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #599fff, transparent);
+  top: -100px;
+  left: -100px;
+  animation: floatBlob 20s ease-in-out infinite;
+}
+
+.bg-blob-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #22d3ee, transparent);
+  bottom: -50px;
+  right: -50px;
+  animation: floatBlob 25s ease-in-out infinite reverse;
+}
+
+.bg-blob-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #8ec1ff, transparent);
+  top: 40%;
+  left: 50%;
+  animation: floatBlob 30s ease-in-out infinite;
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(50px, -50px) scale(1.1); }
+  66% { transform: translate(-30px, 30px) scale(0.9); }
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(51, 128, 252, 0.25);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 20px rgba(51, 128, 252, 0.08);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: #599fff;
+  box-shadow: 0 0 0 3px rgba(89, 159, 255, 0.2);
+  outline: none;
+}
+
+.glass-button {
+  background: linear-gradient(135deg, rgba(51, 128, 252, 0.9), rgba(28, 97, 240, 0.9));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.75rem;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.glass-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(51, 128, 252, 0.35);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+}
+
+.glass-button-secondary {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.75rem;
+  color: #1c61f0;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.glass-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(51, 128, 252, 0.15);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(89, 159, 255, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(89, 159, 255, 0.7);
+}
+
+/* 3D Medicine Bottle Animation */
+.bottle-container {
+  position: relative;
+  width: 120px;
+  height: 180px;
+  margin: 0 auto;
+}
+
+.bottle-3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: bottleRotate 4s ease-in-out infinite;
+}
+
+@keyframes bottleRotate {
+  0%, 100% { transform: rotateY(-5deg) rotateX(2deg); }
+  50% { transform: rotateY(5deg) rotateX(-2deg); }
+}
+
+.bottle-body {
+  position: absolute;
+  top: 30px;
+  left: 20px;
+  width: 80px;
+  height: 140px;
+  border-radius: 16px 16px 20px 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(89,159,255,0.15));
+  border: 2px solid rgba(89,159,255,0.3);
+  overflow: hidden;
+  box-shadow: 
+    inset 0 0 20px rgba(89,159,255,0.1),
+    0 10px 30px rgba(51,128,252,0.2);
+}
+
+.bottle-neck {
+  position: absolute;
+  top: 10px;
+  left: 45px;
+  width: 30px;
+  height: 25px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(89,159,255,0.15));
+  border: 2px solid rgba(89,159,255,0.3);
+  border-bottom: none;
+}
+
+.bottle-cap {
+  position: absolute;
+  top: 0;
+  left: 42px;
+  width: 36px;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #1c61f0, #3380fc);
+  box-shadow: 0 4px 12px rgba(28,97,240,0.3);
+}
+
+.bottle-liquid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-radius: 0 0 18px 18px;
+  background: linear-gradient(180deg, rgba(34,211,238,0.7), rgba(6,182,212,0.85));
+  transition: height 0.3s ease;
+  overflow: hidden;
+}
+
+.bottle-liquid::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  background: rgba(34,211,238,0.5);
+  border-radius: 50%;
+  animation: liquidWave 2s ease-in-out infinite;
+}
+
+@keyframes liquidWave {
+  0%, 100% { transform: translateX(-10px) scaleY(0.8); }
+  50% { transform: translateX(10px) scaleY(1.2); }
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  animation: bubbleRise 2s ease-in infinite;
+}
+
+@keyframes bubbleRise {
+  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-100px) scale(0.3); opacity: 0; }
+}
+
+.bottle-shine {
+  position: absolute;
+  top: 35px;
+  left: 28px;
+  width: 12px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.5), transparent);
+  filter: blur(3px);
+}
+
+.bottle-label {
+  position: absolute;
+  top: 70px;
+  left: 25px;
+  width: 70px;
+  height: 30px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1c61f0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Chat message animations */
+.message-enter {
+  animation: messageEnter 0.4s ease-out;
+}
+
+@keyframes messageEnter {
+  0% { opacity: 0; transform: translateY(15px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Pulse ring for voice */
+.pulse-ring {
+  animation: pulseRing 1.5s ease-out infinite;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* Shimmer effect */
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.3) 25%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.3) 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* Stethoscope animation */
+.stethoscope-pulse {
+  animation: stethoscopePulse 2s ease-in-out infinite;
+}
+
+@keyframes stethoscopePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Floating medical icons */
+.float-icon {
+  animation: floatIcon 4s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(5deg); }
+}
+
+/* Progress bar */
+.progress-fill {
+  background: linear-gradient(90deg, #3380fc, #22d3ee);
+  transition: width 0.5s ease;
+}
+
+/* Typing indicator */
+.typing-dot {
+  animation: typingDot 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-8px); opacity: 1; }
+}
+
+/* Tab indicator */
+.tab-indicator {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card entrance */
+.card-enter {
+  animation: cardEnter 0.5s ease-out backwards;
+}
+
+@keyframes cardEnter {
+  0% { opacity: 0; transform: translateY(20px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Glow effect */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(89, 159, 255, 0.3), 0 0 40px rgba(89, 159, 255, 0.1);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), 0 0 40px rgba(34, 211, 238, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .bottle-container {
+    width: 100px;
+    height: 150px;
+  }
+}
