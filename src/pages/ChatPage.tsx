@@ -45,24 +45,38 @@ export function ChatPage() {
 
   useEffect(() => {
     const sid = localStorage.getItem('medikiosk_session_id')
-    const m = localStorage.getItem('medikiosk_mode') as 'allopathic' | 'ayush' | null
-    const lang = localStorage.getItem('medikiosk_language')
+    const selectedMode = (localStorage.getItem('medikiosk_mode') as 'allopathic' | 'ayush' | null) || 'allopathic'
+    const selectedLanguage = (localStorage.getItem('medikiosk_language') as Language | null) || 'en'
+    const localizedQuestions = localizeQuestions(
+      selectedMode === 'ayush' ? ayushQuestions : allopathicQuestions,
+      selectedLanguage,
+    )
+    const selectedPack = getLanguagePack(selectedLanguage)
 
     if (sid) {
       setSessionId(sid)
-      if (m) setMode(m)
-      if (lang) setLanguage(lang as Language)
+      setMode(selectedMode)
+      setLanguage(selectedLanguage)
 
       getChatMessages(sid).then((existing) => {
         if (existing.length > 0) {
-          const restored: Message[] = existing.map((m) => ({
-            role: m.role as 'user' | 'assistant' | 'system',
-            content: m.content,
-            questionType: m.question_type ?? undefined,
-          }))
+          const restored: Message[] = existing.map((message, index) => {
+            const questionType = message.question_type ?? undefined
+            if (message.role !== 'assistant') {
+              return { role: message.role as 'user' | 'assistant' | 'system', content: message.content, questionType }
+            }
+            if (questionType === 'completion') {
+              return { role: 'assistant', content: selectedPack.completion, questionType }
+            }
+            const localizedQuestion = localizedQuestions.find((question) => question.id === questionType)
+            const content = index === 0
+              ? `${selectedPack.greeting}\n\n${localizedQuestion?.question || message.content}`
+              : localizedQuestion?.question || message.content
+            return { role: 'assistant', content, questionType }
+          })
           setMessages(restored)
-          const answeredCount = existing.filter((m) => m.role === 'user').length
-          setQuestionIndex(Math.min(answeredCount, questions.length))
+          const answeredCount = existing.filter((message) => message.role === 'user').length
+          setQuestionIndex(Math.min(answeredCount, localizedQuestions.length))
           const restoredAnswers: Record<string, string> = {}
           existing.forEach((msg) => {
             if (msg.role === 'user' && msg.question_type) {
@@ -70,11 +84,11 @@ export function ChatPage() {
             }
           })
           setAnswers(restoredAnswers)
-          if (answeredCount >= questions.length) {
+          if (answeredCount >= localizedQuestions.length) {
             setCompleted(true)
           }
         } else {
-          startConversation(sid, m || 'allopathic')
+          startConversation(sid, selectedMode, selectedLanguage)
         }
         setLoadingMessages(false)
       })
@@ -87,11 +101,12 @@ export function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const startConversation = async (sid: string, m: string) => {
-    const q = localizeQuestions(m === 'ayush' ? ayushQuestions : allopathicQuestions, language)[0]
+  const startConversation = async (sid: string, m: 'allopathic' | 'ayush', selectedLanguage: Language) => {
+    const selectedPack = getLanguagePack(selectedLanguage)
+    const q = localizeQuestions(m === 'ayush' ? ayushQuestions : allopathicQuestions, selectedLanguage)[0]
     const greeting: Message = {
       role: 'assistant',
-      content: `${languagePack.greeting}\n\n${q.question}`,
+      content: `${selectedPack.greeting}\n\n${q.question}`,
       questionType: q.id,
     }
     setMessages([greeting])

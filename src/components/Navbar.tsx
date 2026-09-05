@@ -25,7 +25,7 @@ export function Navbar() {
             className="w-12 h-12 rounded-xl glass flex items-center justify-center shadow-lg overflow-hidden"
           >
             <div className="relative w-10 h-10 overflow-hidden rounded-lg">
-              <img src="/WhatsApp_Image_2026-09-03_at_19.30.17.jpeg" alt="MediKiosk medical emblem" className="absolute w-24 h-24 max-w-none -left-7 -top-2" />
+              <img src="/WhatsApp_Image_2026-09-05.jpeg" alt="MediKiosk medical emblem" className="absolute w-24 h-24 max-w-none -left-7 -top-2" />
             </div>
           </motion.div>
         </NavLink>
