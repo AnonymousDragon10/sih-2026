@@ -1,9 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Upload, ScanLine, FileText, FlaskConical, ClipboardList, Check, AlertCircle, FilePlus, Trash2, Pill } from 'lucide-react'
-import { addDocument, getDocuments } from '../lib/api'
+import { Upload, ScanLine, FileText, FlaskConical, ClipboardList, Check, AlertCircle, FilePlus, Trash2, Pill, Download as DownloadIcon } from 'lucide-react'
+import { addDocument, getDocuments, getRecentRecords, saveSummary, type PatientRecord } from '../lib/api'
 import { BottleLoader } from '../components/BottleLoader'
+import { generatePrescriptionPdf } from '../lib/pdfGenerator'
+import type { ClinicalSummary } from '../types'
 
 interface ScannedDoc {
   id: string
@@ -23,9 +25,12 @@ export function ScanPage() {
   const [processingLabel, setProcessingLabel] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const [selectedDocType, setSelectedDocType] = useState('prescription')
+  const [previousRecords, setPreviousRecords] = useState<PatientRecord[]>([])
+  const [editingRecord, setEditingRecord] = useState<PatientRecord | null>(null)
+  const [editingDraft, setEditingDraft] = useState<ClinicalSummary | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useState(() => {
+  useEffect(() => {
     const sid = localStorage.getItem('medikiosk_session_id')
     if (sid) {
       setSessionId(sid)
@@ -42,7 +47,8 @@ export function ScanPage() {
         )
       })
     }
-  })
+    getRecentRecords(10).then(setPreviousRecords)
+  }, [])
 
   const docTypes = [
     { value: 'prescription', label: 'Prescription', icon: FileText, color: 'from-primary-400 to-primary-600' },
@@ -332,6 +338,60 @@ export function ScanPage() {
               </motion.div>
             )
           })}
+        </div>
+      )}
+
+      {/* Previous patient records */}
+      <section className="glass-card p-6 mb-6">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-primary-800">View Previous Patient&apos;s Records</h2>
+            <p className="text-sm text-primary-500">The 10 most recent kiosk sessions are available for authorized clinical review.</p>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">Last 10</span>
+        </div>
+        {previousRecords.length === 0 ? (
+          <div className="glass rounded-xl p-5 text-center text-sm text-primary-500">No previous patient summaries are available yet.</div>
+        ) : (
+          <div className="space-y-3">
+            {previousRecords.map((record) => (
+              <div key={record.session.id} className="glass rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-primary-800">{record.patient.name}</h3>
+                    {record.redFlags.length > 0 && <span className="px-2 py-0.5 rounded-full bg-error-100 text-error-700 text-xs font-semibold">Red flag</span>}
+                  </div>
+                  <p className="text-xs text-primary-500 mt-1">{new Date(record.session.created_at).toLocaleString()} · {record.session.mode} · {record.session.language}</p>
+                  <p className="text-xs text-primary-600 mt-1">{record.summary ? record.summary.summary.chief_complaint : 'Summary not generated'}</p>
+                </div>
+                <div className="flex gap-2">
+                  {record.summary && <button onClick={() => { setEditingRecord(record); setEditingDraft(record.summary!.summary) }} className="glass-button-secondary px-3 py-2 text-xs">Edit summary</button>}
+                  {record.summary && <button onClick={() => downloadRecord(record)} className="glass-button px-3 py-2 text-xs flex items-center gap-1"><DownloadIcon /> Download PDF</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {editingRecord && editingDraft && (
+        <div className="glass-card p-6 mb-6 border-2 border-primary-300">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-display text-xl font-semibold text-primary-800">Edit Summary: {editingRecord.patient.name}</h2>
+              <p className="text-xs text-primary-500">Changes are saved to this patient record and included in the downloadable prescription.</p>
+            </div>
+            <button onClick={() => { setEditingRecord(null); setEditingDraft(null) }} className="glass-button-secondary px-3 py-2 text-sm">Close</button>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {Object.entries(editingDraft).filter(([key]) => key !== 'ayush_assessment').map(([key, value]) => (
+              <label key={key} className="text-xs font-semibold text-primary-700 capitalize">
+                {key.replace(/_/g, ' ')}
+                <textarea value={String(value)} onChange={(event) => setEditingDraft({ ...editingDraft, [key]: event.target.value })} className="glass-input w-full mt-1 px-3 py-2 text-sm font-normal min-h-[86px]" />
+              </label>
+            ))}
+          </div>
+          <button onClick={saveEditedRecord} className="glass-button px-5 py-3 mt-4 flex items-center gap-2"><Check size={16} /> Save edited summary</button>
         </div>
       )}
 

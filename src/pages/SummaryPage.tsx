@@ -5,7 +5,8 @@ import { FileText, Check, Edit, Save, Download, AlertCircle, Stethoscope, Pill, 
 import { getChatMessages, getDocuments, saveSummary, getSummary, getRedFlags, completeSession } from '../lib/api'
 import { generateSummary } from '../lib/clinicalEngine'
 import { BottleLoader } from '../components/BottleLoader'
-import type { ClinicalSummary } from '../types'
+import type { ClinicalSummary, RedFlag } from '../types'
+import { generatePrescriptionPdf } from '../lib/pdfGenerator'
 
 export function SummaryPage() {
   const navigate = useNavigate()
@@ -14,7 +15,7 @@ export function SummaryPage() {
   const [summary, setSummary] = useState<ClinicalSummary | null>(null)
   const [editing, setEditing] = useState(false)
   const [editedSummary, setEditedSummary] = useState<ClinicalSummary | null>(null)
-  const [redFlags, setRedFlags] = useState<any[]>([])
+  const [redFlags, setRedFlags] = useState<RedFlag[]>([])
   const [saved, setSaved] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
 
@@ -32,7 +33,8 @@ export function SummaryPage() {
     const loadSummary = async () => {
       setProgress(15)
 
-      const existingSummary = await getSummary(sid)
+      const [existingSummary, flags] = await Promise.all([getSummary(sid), getRedFlags(sid)])
+      setRedFlags(flags)
       setProgress(30)
 
       if (existingSummary) {
@@ -63,9 +65,6 @@ export function SummaryPage() {
       await saveSummary(sid, generated as unknown as Record<string, unknown>)
       setProgress(100)
 
-      const flags = await getRedFlags(sid)
-      setRedFlags(flags)
-
       setTimeout(() => setLoading(false), 500)
     }
 
@@ -79,7 +78,21 @@ export function SummaryPage() {
     await completeSession(sessionId)
     setEditing(false)
     setSaved(true)
+    generatePrescriptionPdf(editedSummary, redFlags, {
+      patientName: localStorage.getItem('medikiosk_patient_name') || 'Patient',
+      language: localStorage.getItem('medikiosk_language') || 'en',
+      mode: localStorage.getItem('medikiosk_mode') || 'allopathic',
+    })
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  const downloadSummary = () => {
+    if (!summary) return
+    generatePrescriptionPdf(summary, redFlags, {
+      patientName: localStorage.getItem('medikiosk_patient_name') || 'Patient',
+      language: localStorage.getItem('medikiosk_language') || 'en',
+      mode: localStorage.getItem('medikiosk_mode') || 'allopathic',
+    })
   }
 
   const summarySections = [
@@ -274,9 +287,13 @@ export function SummaryPage() {
           onClick={handleSave}
           className="glass-button px-6 py-3 flex items-center gap-2"
         >
-          <Download size={18} /> Confirm & Submit to HIS
+          <Download size={18} /> Confirm & Download PDF
         </button>
       </div>
+
+      <button onClick={downloadSummary} className="mx-auto mt-4 flex items-center gap-2 text-sm text-primary-600 hover:text-primary-800 transition-colors">
+        <Download size={16} /> Download prescription PDF again
+      </button>
 
       <p className="text-center text-xs text-primary-400 mt-4">
         This summary is a draft for physician review. The physician retains full control to accept, amend, or reject.

@@ -20,16 +20,12 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <NavLink to="/" className="flex items-center gap-3 group">
           <motion.div
-            whileHover={{ rotate: [0, -10, 10, 0] }}
-            transition={{ duration: 0.5 }}
-            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg"
+            whileHover={{ scale: 1.1, rotate: [0, -8, 8, 0] }}
+            transition={{ duration: 0.6 }}
+            className="w-12 h-12 rounded-xl glass flex items-center justify-center shadow-lg overflow-hidden"
           >
-            <img src="/medikiosk-logo.svg" alt="MediKiosk" className="w-7 h-7" />
+            <img src="/medikiosk-logo.svg" alt="MediKiosk" className="w-9 h-9" />
           </motion.div>
-          <div className="flex flex-col">
-            <span className="font-display font-bold text-lg text-primary-800 leading-none">MediKiosk</span>
-            <span className="text-xs text-primary-500 leading-none mt-0.5">AI Clinical History</span>
-          </div>
         </NavLink>
 
         <div className="hidden md:flex items-center gap-1">

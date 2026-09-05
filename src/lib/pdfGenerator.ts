@@ -1,6 +1,16 @@
+import { jsPDF } from 'jspdf'
 import type { ClinicalSummary, RedFlag } from '../types'
 
-const SUMMARY_SECTIONS: { key: keyof ClinicalSummary; label: string }[] = [
+interface PdfOptions {
+  patientName?: string
+  patientAge?: string
+  patientGender?: string
+  abhaId?: string
+  language?: string
+  mode?: string
+}
+
+const sections: { key: keyof ClinicalSummary; label: string }[] = [
   { key: 'chief_complaint', label: 'Chief Complaint' },
   { key: 'hpi', label: 'History of Present Illness' },
   { key: 'past_medical_history', label: 'Past Medical / Surgical History' },
@@ -11,31 +21,15 @@ const SUMMARY_SECTIONS: { key: keyof ClinicalSummary; label: string }[] = [
   { key: 'prior_investigations', label: 'Prior Investigations' },
 ]
 
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
+function safeFileName(value: string): string {
+  return value.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'patient'
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br/>')
-}
-
-interface PdfOptions {
-  patientName?: string
-  patientAge?: string
-  patientGender?: string
-  abhaId?: string
-  language?: string
-  mode?: string
-  generatedAt?: string
+function addWrappedText(doc: jsPDF, text: string, x: number, y: number, width: number, fontSize = 10): number {
+  doc.setFontSize(fontSize)
+  const lines = doc.splitTextToSize(text || 'Not specified', width) as string[]
+  doc.text(lines, x, y)
+  return y + lines.length * (fontSize * 0.45 + 3)
 }
 
 export function generatePrescriptionPdf(
@@ -43,117 +37,113 @@ export function generatePrescriptionPdf(
   redFlags: RedFlag[] = [],
   options: PdfOptions = {}
 ): void {
-  const hasRedFlags = redFlags.length > 0
-  const now = options.generatedAt || new Date().toLocaleString()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const margin = 18
+  let y = 20
 
-  const redFlagBlock = hasRedFlags
-    ? `
-    <div style="background: #fef2f2; border: 3px solid #ef4444; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <div style="width: 24px; height: 24px; background: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">!</div>
-        <span style="color: #dc2626; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Red Flag Detection</span>
-      </div>
-      ${redFlags
-        .map(
-          (flag) =>
-            `<div style="color: #b91c1c; font-size: 13px; margin-top: 4px; font-weight: 600;">${escapeHtml(flag.description)} [${escapeHtml(flag.severity.toUpperCase())}]</div>`
-        )
-        .join('')}
-    </div>`
-    : ''
+  doc.setFillColor(239, 246, 255)
+  doc.rect(0, 0, pageWidth, 38, 'F')
+  doc.setFillColor(51, 128, 252)
+  doc.roundedRect(margin, 10, 17, 17, 4, 4, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(15)
+  doc.text('M', margin + 5.2, 21.5)
+  doc.setTextColor(26, 56, 143)
+  doc.setFontSize(18)
+  doc.text('MediKiosk', margin + 22, 17)
+  doc.setTextColor(89, 159, 255)
+  doc.setFontSize(8)
+  doc.text('AI Clinical History Platform', margin + 22, 23)
+  doc.setTextColor(75, 85, 99)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 15, { align: 'right' })
+  doc.text(`Mode: ${options.mode || 'allopathic'}`, pageWidth - margin, 21, { align: 'right' })
+  y = 48
 
-  const ayushBlock = summary.ayush_assessment
-    ? `
-    <div style="margin-top: 24px; padding: 16px; background: #fffbeb; border: 2px solid #f59e0b; border-radius: 8px;">
-      <div style="font-size: 15px; font-weight: 700; color: #b45309; margin-bottom: 12px;">AYUSH Assessment - Dashavidha Pariksha</div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        ${Object.entries(summary.ayush_assessment)
-          .map(
-            ([key, value]) =>
-              `<div style="font-size: 12px;"><span style="font-weight: 600; color: #92400e; text-transform: capitalize;">${escapeHtml(key.replace(/_/g, ' '))}:</span> <span style="color: #78350f;">${escapeHtml(value as string)}</span></div>`
-          )
-          .join('')}
-      </div>
-    </div>`
-    : ''
+  doc.setFillColor(240, 247, 255)
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 18, 3, 3, 'F')
+  doc.setTextColor(31, 41, 55)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Patient:', margin + 4, y + 7)
+  doc.text('Age:', margin + 70, y + 7)
+  doc.text('Gender:', margin + 104, y + 7)
+  doc.text('ABHA:', margin + 145, y + 7)
+  doc.setFont('helvetica', 'normal')
+  doc.text(options.patientName || 'N/A', margin + 18, y + 7)
+  doc.text(options.patientAge || 'N/A', margin + 82, y + 7)
+  doc.text(options.patientGender || 'N/A', margin + 119, y + 7)
+  doc.text(options.abhaId || 'N/A', margin + 158, y + 7)
+  doc.text(`Language: ${options.language || 'en'}`, margin + 4, y + 13)
+  y += 28
 
-  const sectionsHtml = SUMMARY_SECTIONS.map(
-    (section) => `
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e0e7ff; padding-bottom: 2px;">${section.label}</div>
-        <div style="font-size: 13px; color: #374151; line-height: 1.6;">${escapeHtml((summary[section.key] as string) || 'Not specified')}</div>
-      </div>`
-  ).join('')
-
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<title>Clinical History Summary - ${escapeHtml(options.patientName || 'Patient')}</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', Arial, sans-serif; padding: 40px; color: #1f2937; background: white; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #3380fc; padding-bottom: 20px; margin-bottom: 24px; }
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-circle { width: 48px; height: 48px; background: linear-gradient(135deg, #3380fc, #22d3ee); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; }
-  .logo-text { font-size: 22px; font-weight: 700; color: #1a388f; }
-  .logo-sub { font-size: 11px; color: #599fff; }
-  .meta { text-align: right; font-size: 11px; color: #6b7280; }
-  .patient-bar { background: #f0f7ff; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; display: flex; gap: 24px; flex-wrap: wrap; }
-  .patient-bar div { font-size: 12px; }
-  .patient-bar .label { color: #6b7280; font-weight: 600; }
-  .patient-bar .value { color: #1f2937; font-weight: 500; }
-  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center; }
-  @media print { body { padding: 20px; } }
-</style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo">
-      <div class="logo-circle">M</div>
-      <div>
-        <div class="logo-text">MediKiosk</div>
-        <div class="logo-sub">AI Clinical History Platform</div>
-      </div>
-    </div>
-    <div class="meta">
-      <div>Generated: ${escapeHtml(now)}</div>
-      <div>Mode: ${escapeHtml(options.mode || 'allopathic')}</div>
-      ${options.abhaId ? `<div>ABHA: ${escapeHtml(options.abhaId)}</div>` : ''}
-    </div>
-  </div>
-
-  <div class="patient-bar">
-    <div><span class="label">Patient:</span> <span class="value">${escapeHtml(options.patientName || 'N/A')}</span></div>
-    <div><span class="label">Age:</span> <span class="value">${escapeHtml(options.patientAge || 'N/A')}</span></div>
-    <div><span class="label">Gender:</span> <span class="value">${escapeHtml(options.patientGender || 'N/A')}</span></div>
-    <div><span class="label">Language:</span> <span class="value">${escapeHtml(options.language || 'en')}</span></div>
-  </div>
-
-  ${redFlagBlock}
-
-  <div style="font-size: 16px; font-weight: 700; color: #1a388f; margin-bottom: 16px;">Clinical History Summary</div>
-
-  ${sectionsHtml}
-
-  ${ayushBlock}
-
-  <div class="footer">
-    MediKiosk - AI-Driven Public Health Chatbot for Disease Awareness | SIH 2026<br/>
-    This summary is a draft for physician review. The physician retains full control to accept, amend, or reject.
-  </div>
-</body>
-</html>`
-
-  const blob = new Blob([html], { type: 'text/html' })
-  const url = URL.createObjectURL(blob)
-  const win = window.open(url, '_blank')
-  if (win) {
-    win.onload = () => {
-      setTimeout(() => {
-        win.focus()
-        win.print()
-      }, 500)
-    }
+  if (redFlags.length > 0) {
+    doc.setFillColor(254, 242, 242)
+    doc.setDrawColor(239, 68, 68)
+    doc.setLineWidth(0.8)
+    const height = 14 + redFlags.length * 8
+    doc.roundedRect(margin, y, pageWidth - margin * 2, height, 3, 3, 'FD')
+    doc.setTextColor(185, 28, 28)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(12)
+    doc.text('RED FLAG DETECTION', margin + 5, y + 8)
+    doc.setFontSize(8.5)
+    redFlags.forEach((flag, index) => {
+      doc.text(`• ${flag.description} [${flag.severity.toUpperCase()}]`, margin + 5, y + 15 + index * 7)
+    })
+    y += height + 10
   }
+
+  doc.setTextColor(26, 56, 143)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.text('CLINICAL HISTORY SUMMARY', margin, y)
+  y += 10
+
+  sections.forEach((section) => {
+    if (y > pageHeight - 28) {
+      doc.addPage()
+      y = 20
+    }
+    doc.setTextColor(30, 58, 95)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.text(section.label.toUpperCase(), margin, y)
+    doc.setDrawColor(224, 231, 255)
+    doc.line(margin, y + 2, pageWidth - margin, y + 2)
+    y += 7
+    doc.setTextColor(55, 65, 81)
+    doc.setFont('helvetica', 'normal')
+    y = addWrappedText(doc, String(summary[section.key] || 'Not specified'), margin, y, pageWidth - margin * 2, 9)
+    y += 5
+  })
+
+  if (summary.ayush_assessment) {
+    if (y > pageHeight - 65) {
+      doc.addPage()
+      y = 20
+    }
+    doc.setFillColor(255, 251, 235)
+    doc.setDrawColor(245, 158, 11)
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 10 + Object.keys(summary.ayush_assessment).length * 6, 3, 3, 'FD')
+    doc.setTextColor(180, 83, 9)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.text('AYUSH ASSESSMENT - DASHAVIDHA PARIKSHA', margin + 5, y + 7)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    Object.entries(summary.ayush_assessment).forEach(([key, value], index) => {
+      doc.text(`${key.replace(/_/g, ' ')}: ${value}`, margin + 5, y + 14 + index * 6)
+    })
+    y += 18 + Object.keys(summary.ayush_assessment).length * 6
+  }
+
+  doc.setTextColor(156, 163, 175)
+  doc.setFontSize(7)
+  doc.text('MediKiosk | This summary is a draft for physician review. The physician retains full control.', pageWidth / 2, pageHeight - 12, { align: 'center' })
+  doc.save(`medikiosk-prescription-${safeFileName(options.patientName || 'patient')}.pdf`)
 }

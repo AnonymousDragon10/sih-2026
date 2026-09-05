@@ -10,6 +10,8 @@ import {
   type InterviewQuestion,
 } from '../lib/clinicalEngine'
 import { BottleLoader } from '../components/BottleLoader'
+import { getLanguagePack, localizeQuestions } from '../lib/i18n'
+import type { Language } from '../types'
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
@@ -26,7 +28,7 @@ export function ChatPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [mode, setMode] = useState<'allopathic' | 'ayush'>('allopathic')
-  const [language, setLanguage] = useState('en')
+  const [language, setLanguage] = useState<Language>('en')
   const [redFlagAlert, setRedFlagAlert] = useState<string | null>(null)
   const [completed, setCompleted] = useState(false)
   const [answers, setAnswers] = useState<Record<string, string>>({})
@@ -35,7 +37,11 @@ export function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
 
-  const questions: InterviewQuestion[] = mode === 'ayush' ? ayushQuestions : allopathicQuestions
+  const questions: InterviewQuestion[] = localizeQuestions(
+    mode === 'ayush' ? ayushQuestions : allopathicQuestions,
+    language,
+  )
+  const languagePack = getLanguagePack(language)
 
   useEffect(() => {
     const sid = localStorage.getItem('medikiosk_session_id')
@@ -82,10 +88,10 @@ export function ChatPage() {
   }, [messages])
 
   const startConversation = async (sid: string, m: string) => {
-    const q = (m === 'ayush' ? ayushQuestions : allopathicQuestions)[0]
+    const q = localizeQuestions(m === 'ayush' ? ayushQuestions : allopathicQuestions, language)[0]
     const greeting: Message = {
       role: 'assistant',
-      content: `Hello! I'm your AI clinical assistant. I'll ask you some questions about your health. You can answer by typing or using the microphone. Let's begin.\n\n${q.question}`,
+      content: `${languagePack.greeting}\n\n${q.question}`,
       questionType: q.id,
     }
     setMessages([greeting])
@@ -131,7 +137,7 @@ export function ChatPage() {
       } else {
         const completionMsg: Message = {
           role: 'assistant',
-          content: 'Thank you! I have recorded all your responses. You can now scan your medical documents or proceed to view your structured summary.',
+          content: languagePack.completion,
         }
         setMessages((prev) => [...prev, completionMsg])
         await addChatMessage(sessionId, 'assistant', completionMsg.content, 'text', 'completion')
@@ -177,7 +183,7 @@ export function ChatPage() {
       } else {
         const completionMsg: Message = {
           role: 'assistant',
-          content: 'Thank you! I have recorded all your responses. You can now scan your medical documents or proceed to view your structured summary.',
+          content: languagePack.completion,
         }
         setMessages((prev) => [...prev, completionMsg])
         await addChatMessage(sessionId, 'assistant', completionMsg.content, 'text', 'completion')
@@ -201,7 +207,11 @@ export function ChatPage() {
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
-    recognition.lang = language === 'hi' ? 'hi-IN' : 'en-IN'
+    const speechLocales: Record<Language, string> = {
+      en: 'en-IN', hi: 'hi-IN', ta: 'ta-IN', te: 'te-IN', kn: 'kn-IN',
+      mr: 'mr-IN', bn: 'bn-IN', gu: 'gu-IN', pa: 'pa-IN', ml: 'ml-IN',
+    }
+    recognition.lang = speechLocales[language]
     recognition.continuous = false
     recognition.interimResults = false
 
@@ -305,7 +315,7 @@ export function ChatPage() {
                 {msg.role === 'assistant' && (
                   <div className="flex items-center gap-2 mb-1">
                     <Stethoscope className="w-4 h-4 text-primary-500" />
-                    <span className="text-xs font-medium text-primary-500">AI Assistant</span>
+                    <span className="text-xs font-medium text-primary-500">{languagePack.assistant}</span>
                   </div>
                 )}
                 <p className="text-sm whitespace-pre-line">{msg.content}</p>
@@ -381,7 +391,7 @@ export function ChatPage() {
           </div>
           <div className="flex items-center gap-2 mt-2 text-xs text-primary-400">
             <Volume2 size={14} />
-            <span>You can speak or type your answers. Voice uses Bhashini ASR for Indian languages.</span>
+            <span>{languagePack.voiceHint} Voice uses Bhashini ASR for Indian languages.</span>
           </div>
         </div>
       ) : (
