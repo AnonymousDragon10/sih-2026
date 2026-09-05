@@ -204,3 +204,59 @@ export async function flagSession(sessionId: string): Promise<void> {
     .eq('id', sessionId)
   if (error) console.error('Error flagging session:', error)
 }
+
+export interface PatientRecord {
+  patient: Patient
+  session: Session
+  summary: Summary | null
+  redFlags: RedFlag[]
+}
+
+export async function getRecentRecords(limit: number = 10): Promise<PatientRecord[]> {
+  const { data: sessions, error: sessionErr } = await supabase
+    .from('sessions')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (sessionErr || !sessions || sessions.length === 0) {
+    if (sessionErr) console.error('Error fetching sessions:', sessionErr)
+    return []
+  }
+
+  const patientIds = [...new Set(sessions.map((s) => s.patient_id))]
+  const { data: patients, error: patientErr } = await supabase
+    .from('patients')
+    .select('*')
+    .in('id', patientIds)
+
+  if (patientErr) {
+    console.error('Error fetching patients:', patientErr)
+    return []
+  }
+
+  const sessionIds = sessions.map((s) => s.id)
+  const [{ data: summaries }, { data: redFlags }] = await Promise.all([
+    supabase.from('summaries').select('*').in('session_id', sessionIds),
+    supabase.from('red_flags').select('*').in('session_id', sessionIds),
+  ])
+
+  const patientMap = new Map(patients?.map((p) => [p.id, p]) || [])
+  const summaryMap = new Map<string, Summary>()
+  summaries?.forEach((s) => {
+    if (!summaryMap.has(s.session_id)) summaryMap.set(s.session_id, s as Summary)
+  })
+  const flagsMap = new Map<string, RedFlag[]>()
+  redFlags?.forEach((f) => {
+    const arr = flagsMap.get(f.session_id) || []
+    arr.push(f as RedFlag)
+    flagsMap.set(f.session_id, arr)
+  })
+
+  return sessions.map((session) => ({
+    patient: patientMap.get(session.patient_id) || ({} as Patient),
+    session: session as Session,
+    summary: summaryMap.get(session.id) || null,
+    redFlags: flagsMap.get(session.id) || [],
+  }))
+}
