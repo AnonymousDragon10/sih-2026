@@ -52,7 +52,7 @@ export function ConsentPage() {
     },
   ]
 
-  const toggleConsent = (key: string) => {
+  const toggleConsent = (key: keyof typeof consents) => {
     setConsents((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
@@ -105,7 +105,7 @@ export function ConsentPage() {
                   </div>
                   <p className="text-sm text-primary-600 mb-3">{item.description}</p>
                   <button
-                    onClick={() => toggleConsent(item.key)}
+                    onClick={() => toggleConsent(item.key as keyof typeof consents)}
                     className={`relative w-14 h-7 rounded-full transition-all ${
                       isGranted ? 'bg-success-500' : 'bg-primary-200'
                     }`}

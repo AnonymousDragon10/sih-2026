@@ -32,12 +32,22 @@ function addWrappedText(doc: jsPDF, text: string, x: number, y: number, width: n
   return y + lines.length * (fontSize * 0.45 + 3)
 }
 
-export function generatePrescriptionPdf(
+export async function generatePrescriptionPdf(
   summary: ClinicalSummary,
   redFlags: RedFlag[] = [],
   options: PdfOptions = {}
-): void {
+): Promise<void> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  let logoData: string | null = null
+  try {
+    const response = await fetch('/WhatsApp_Image_2026-09-03_at_19.30.17.jpeg')
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    let binary = ''
+    bytes.forEach((byte) => { binary += String.fromCharCode(byte) })
+    logoData = `data:image/jpeg;base64,${btoa(binary)}`
+  } catch {
+    logoData = null
+  }
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 18
@@ -45,12 +55,18 @@ export function generatePrescriptionPdf(
 
   doc.setFillColor(239, 246, 255)
   doc.rect(0, 0, pageWidth, 38, 'F')
-  doc.setFillColor(51, 128, 252)
+  doc.setFillColor(255, 255, 255)
   doc.roundedRect(margin, 10, 17, 17, 4, 4, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(15)
-  doc.text('M', margin + 5.2, 21.5)
+  if (logoData) {
+    doc.addImage(logoData, 'JPEG', margin + 1, 11, 15, 15)
+  } else {
+    doc.setFillColor(51, 128, 252)
+    doc.roundedRect(margin, 10, 17, 17, 4, 4, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(15)
+    doc.text('M', margin + 5.2, 21.5)
+  }
   doc.setTextColor(26, 56, 143)
   doc.setFontSize(18)
   doc.text('MediKiosk', margin + 22, 17)

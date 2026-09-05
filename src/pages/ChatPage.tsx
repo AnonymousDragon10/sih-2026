@@ -51,7 +51,7 @@ export function ChatPage() {
     if (sid) {
       setSessionId(sid)
       if (m) setMode(m)
-      if (lang) setLanguage(lang)
+      if (lang) setLanguage(lang as Language)
 
       getChatMessages(sid).then((existing) => {
         if (existing.length > 0) {

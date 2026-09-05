@@ -173,6 +173,32 @@ export function ScanPage() {
     handleFileUpload(e.dataTransfer.files)
   }
 
+  const downloadRecord = (record: PatientRecord) => {
+    if (!record.summary) return
+    void generatePrescriptionPdf(record.summary.summary, record.redFlags, {
+      patientName: record.patient.name,
+      patientAge: record.patient.age ? String(record.patient.age) : undefined,
+      patientGender: record.patient.gender || undefined,
+      abhaId: record.patient.abha_id || undefined,
+      language: record.session.language,
+      mode: record.session.mode,
+    })
+  }
+
+  const saveEditedRecord = async () => {
+    if (!editingRecord || !editingDraft) return
+    await saveSummary(editingRecord.session.id, editingDraft as unknown as Record<string, unknown>)
+    setPreviousRecords((records) =>
+      records.map((record) =>
+        record.session.id === editingRecord.session.id
+          ? { ...record, summary: { ...record.summary!, summary: editingDraft } }
+          : record,
+      ),
+    )
+    setEditingRecord(null)
+    setEditingDraft(null)
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <motion.div
@@ -300,19 +326,19 @@ export function ScanPage() {
 
                 {/* Structured data */}
                 <div className="space-y-2">
-                  {doc.structuredData.diagnoses && (
+                  {doc.structuredData.diagnoses ? (
                     <div className="flex items-start gap-2">
                       <span className="text-xs font-medium text-primary-500 mt-0.5">Diagnoses:</span>
                       <span className="text-sm text-primary-700">{(doc.structuredData.diagnoses as string[]).join(', ')}</span>
                     </div>
-                  )}
-                  {doc.structuredData.impression && (
+                  ) : null}
+                  {doc.structuredData.impression ? (
                     <div className="flex items-start gap-2">
                       <span className="text-xs font-medium text-primary-500 mt-0.5">Impression:</span>
                       <span className="text-sm text-primary-700">{doc.structuredData.impression as string}</span>
                     </div>
-                  )}
-                  {doc.structuredData.medications && (
+                  ) : null}
+                  {doc.structuredData.medications ? (
                     <div>
                       <span className="text-xs font-medium text-primary-500">Medications:</span>
                       <div className="flex flex-wrap gap-1.5 mt-1">
@@ -324,7 +350,7 @@ export function ScanPage() {
                         ))}
                       </div>
                     </div>
-                  )}
+                  ) : null}
                   {isLabReport && abnormalValues.length > 0 && (
                     <div className="flex items-start gap-2 p-2 rounded-lg bg-error-50">
                       <AlertCircle size={16} className="text-error-500 flex-shrink-0 mt-0.5" />
