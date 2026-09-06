@@ -144,7 +144,8 @@ export async function updateSummary(summaryId: string, summary: Record<string, u
 }
 
 export async function callCleanupPatientRecords(): Promise<void> {
-  await supabase.rpc('cleanup_patient_records')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) await supabase.rpc('cleanup_patient_records', { p_user: user.id })
 }
 
 export async function callCleanupHisRecords(): Promise<void> {

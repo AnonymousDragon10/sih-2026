@@ -406,3 +406,39 @@ body {
     height: 150px;
   }
 }
+
+/* Accessibility: large text */
+.large-text {
+  font-size: 1.25rem;
+}
+.large-text .text-sm { font-size: 1.1rem; }
+.large-text .text-xs { font-size: 1rem; }
+.large-text .text-lg { font-size: 1.5rem; }
+.large-text .text-xl { font-size: 1.75rem; }
+.large-text .text-2xl { font-size: 2rem; }
+.large-text .text-3xl { font-size: 2.5rem; }
+
+/* Accessibility: high contrast */
+.high-contrast {
+  background: linear-gradient(135deg, #ffffff 0%, #e0f0ff 100%) !important;
+}
+.high-contrast .glass-card,
+.high-contrast .glass,
+.high-contrast .glass-nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(28, 97, 240, 0.6) !important;
+  box-shadow: 0 4px 20px rgba(28, 97, 240, 0.3) !important;
+}
+.high-contrast .text-primary-800,
+.high-contrast .text-primary-700,
+.high-contrast .text-primary-600 {
+  color: #0a1a4a !important;
+}
+.high-contrast .glass-button {
+  background: linear-gradient(135deg, #1c61f0, #0a3fb5) !important;
+  border: 2px solid #0a1a4a !important;
+}
+.high-contrast .glass-input {
+  border: 2px solid #1c61f0 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+}

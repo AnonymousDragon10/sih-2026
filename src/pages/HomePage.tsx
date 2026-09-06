@@ -94,7 +94,7 @@ export function HomePage() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Link to="/identify">
+          <Link to="/auth?role=patient">
             <button className="glass-button px-8 py-4 text-lg flex items-center gap-2 mx-auto">
               Start Patient Registration
               <ArrowRight size={20} />

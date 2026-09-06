@@ -33,6 +33,7 @@ export async function createSession(patientId: string, mode: string, language: s
     .from('sessions')
     .insert({
       patient_id: patientId,
+      user_id: (await supabase.auth.getUser()).data.user?.id ?? null,
       mode,
       language,
       consent_given: true,

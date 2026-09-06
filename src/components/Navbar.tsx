@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Home, MessageSquare, ScanLine, FileText, Stethoscope, Shield, Activity } from 'lucide-react'
+import { Home, MessageSquare, ScanLine, FileText, Stethoscope, Shield, Activity, LogIn, LogOut, ClipboardList } from 'lucide-react'
+import { useAuth } from '../lib/auth'
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
@@ -14,6 +15,12 @@ const navItems = [
 
 export function Navbar() {
   const location = useLocation()
+  const { user, signOut } = useAuth()
+  const visibleItems = user?.role === 'his'
+    ? [...navItems, { to: '/his', label: 'HIS Records', icon: ClipboardList }]
+    : user?.role === 'patient'
+      ? [...navItems, { to: '/records', label: 'Records', icon: ClipboardList }]
+      : navItems
 
   return (
     <nav className="glass-nav fixed top-0 left-0 right-0 z-50 px-4 py-3">
@@ -25,13 +32,13 @@ export function Navbar() {
             className="w-12 h-12 rounded-xl glass flex items-center justify-center shadow-lg overflow-hidden"
           >
             <div className="relative w-10 h-10 overflow-hidden rounded-lg">
-              <img src="/WhatsApp_Image_2026-09-05.jpeg" alt="MediKiosk medical emblem" className="absolute w-24 h-24 max-w-none -left-7 -top-2" />
+              <img src="/WhatsApp_Image_2026-09-05 copy.jpeg" alt="MediKiosk medical emblem" className="absolute w-24 h-24 max-w-none -left-7 -top-2" />
             </div>
           </motion.div>
         </NavLink>
 
         <div className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.to
             return (
@@ -59,7 +66,7 @@ export function Navbar() {
         </div>
 
         <div className="md:hidden flex items-center gap-1">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.to
             return (
@@ -74,6 +81,10 @@ export function Navbar() {
               </NavLink>
             )
           })}
+        </div>
+
+        <div className="hidden md:flex items-center gap-2">
+          {user ? <button onClick={() => void signOut()} className="glass-button-secondary px-3 py-2 text-xs flex items-center gap-1"><LogOut size={14} /> Sign out</button> : <NavLink to="/auth" className="glass-button px-3 py-2 text-xs flex items-center gap-1"><LogIn size={14} /> Sign in</NavLink>}
         </div>
       </div>
     </nav>

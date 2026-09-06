@@ -40,7 +40,7 @@ export async function generatePrescriptionPdf(
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   let logoData: string | null = null
   try {
-    const response = await fetch('/WhatsApp_Image_2026-09-03_at_19.30.17.jpeg')
+    const response = await fetch('/WhatsApp_Image_2026-09-05 copy.jpeg')
     const bytes = new Uint8Array(await response.arrayBuffer())
     let binary = ''
     bytes.forEach((byte) => { binary += String.fromCharCode(byte) })
