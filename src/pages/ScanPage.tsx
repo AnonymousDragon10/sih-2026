@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Upload, ScanLine, FileText, FlaskConical, ClipboardList, Check, AlertCircle, FilePlus, Trash2, Pill, Download as DownloadIcon } from 'lucide-react'
-import { addDocument, getDocuments, getRecentRecords, saveSummary, type PatientRecord } from '../lib/api'
+import { addDocument, getDocuments, saveSummary } from '../lib/api'
+import { useAuth } from '../lib/auth'
+import { getHisRecords, getPatientRecords, type PatientRecord } from '../lib/authApi'
 import { BottleLoader } from '../components/BottleLoader'
 import { generatePrescriptionPdf } from '../lib/pdfGenerator'
-import type { ClinicalSummary } from '../types'
+import type { ClinicalSummary, RedFlag } from '../types'
 
 interface ScannedDoc {
   id: string
@@ -18,6 +20,7 @@ interface ScannedDoc {
 
 export function ScanPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [scannedDocs, setScannedDocs] = useState<ScannedDoc[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -47,8 +50,10 @@ export function ScanPage() {
         )
       })
     }
-    getRecentRecords(10).then(setPreviousRecords)
-  }, [])
+    if (user?.role === 'his') getHisRecords(50).then(setPreviousRecords)
+    else if (user?.role === 'patient') getPatientRecords(10).then(setPreviousRecords)
+    else setPreviousRecords([])
+  }, [user])
 
   const docTypes = [
     { value: 'prescription', label: 'Prescription', icon: FileText, color: 'from-primary-400 to-primary-600' },
@@ -175,7 +180,7 @@ export function ScanPage() {
 
   const downloadRecord = (record: PatientRecord) => {
     if (!record.summary) return
-    void generatePrescriptionPdf(record.summary.summary, record.redFlags, {
+    void generatePrescriptionPdf(record.summary.summary as unknown as ClinicalSummary, record.redFlags as unknown as RedFlag[], {
       patientName: record.patient.name,
       patientAge: record.patient.age ? String(record.patient.age) : undefined,
       patientGender: record.patient.gender || undefined,
@@ -191,7 +196,7 @@ export function ScanPage() {
     setPreviousRecords((records) =>
       records.map((record) =>
         record.session.id === editingRecord.session.id
-          ? { ...record, summary: { ...record.summary!, summary: editingDraft } }
+          ? { ...record, summary: { ...record.summary!, summary: editingDraft as unknown as Record<string, unknown> } }
           : record,
       ),
     )
@@ -372,12 +377,12 @@ export function ScanPage() {
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="font-display text-xl font-semibold text-primary-800">View Previous Patient&apos;s Records</h2>
-            <p className="text-sm text-primary-500">The 10 most recent kiosk sessions are available for authorized clinical review.</p>
+            <p className="text-sm text-primary-500">{user?.role === 'his' ? '50 most recent records across all patients.' : user?.role === 'patient' ? 'Your 10 most recent records.' : 'Sign in to view previous records.'}</p>
           </div>
-          <span className="px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">Last 10</span>
+          <span className="px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">{user?.role === 'his' ? 'Last 50' : 'Last 10'}</span>
         </div>
         {previousRecords.length === 0 ? (
-          <div className="glass rounded-xl p-5 text-center text-sm text-primary-500">No previous patient summaries are available yet.</div>
+          <div className="glass rounded-xl p-5 text-center text-sm text-primary-500">No Records Found</div>
         ) : (
           <div className="space-y-3">
             {previousRecords.map((record) => (
@@ -388,10 +393,10 @@ export function ScanPage() {
                     {record.redFlags.length > 0 && <span className="px-2 py-0.5 rounded-full bg-error-100 text-error-700 text-xs font-semibold">Red flag</span>}
                   </div>
                   <p className="text-xs text-primary-500 mt-1">{new Date(record.session.created_at).toLocaleString()} · {record.session.mode} · {record.session.language}</p>
-                  <p className="text-xs text-primary-600 mt-1">{record.summary ? record.summary.summary.chief_complaint : 'Summary not generated'}</p>
+                  <p className="text-xs text-primary-600 mt-1">{record.summary ? String((record.summary.summary as Record<string, unknown>).chief_complaint ?? 'Summary available') : 'Summary not generated'}</p>
                 </div>
                 <div className="flex gap-2">
-                  {record.summary && <button onClick={() => { setEditingRecord(record); setEditingDraft(record.summary!.summary) }} className="glass-button-secondary px-3 py-2 text-xs">Edit summary</button>}
+                  {record.summary && <button onClick={() => { setEditingRecord(record); setEditingDraft(record.summary!.summary as unknown as ClinicalSummary) }} className="glass-button-secondary px-3 py-2 text-xs">Edit summary</button>}
                   {record.summary && <button onClick={() => downloadRecord(record)} className="glass-button px-3 py-2 text-xs flex items-center gap-1"><DownloadIcon /> Download PDF</button>}
                 </div>
               </div>

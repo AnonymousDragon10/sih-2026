@@ -14,8 +14,12 @@ export function RecordsPage({ his = false }: { his?: boolean }) {
 
   useEffect(() => {
     const load = async () => {
+      if (!user || (his && user.role !== 'his') || (!his && user.role !== 'patient')) {
+        setRecords([])
+        return
+      }
       if (his) await callCleanupHisRecords()
-      else if (user) await callCleanupPatientRecords()
+      else await callCleanupPatientRecords()
       setRecords(his ? await getHisRecords(50) : await getPatientRecords(10))
     }
     void load()
@@ -70,7 +74,7 @@ export function RecordsPage({ his = false }: { his?: boolean }) {
         <div className="glass-card p-10 text-center">
           <FileText className="w-12 h-12 mx-auto text-primary-300 mb-3" />
           <h2 className="font-semibold text-primary-800">No saved summaries yet</h2>
-          <p className="text-sm text-primary-600 mt-2">Complete a consultation to see the prescription record here.</p>
+          <p className="text-sm text-primary-600 mt-2">No Records Found</p>
         </div>
       ) : (
         <div className="space-y-4">

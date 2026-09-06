@@ -35,7 +35,7 @@ export function AuthPage() {
         : await loginHisUser(identifier.trim(), password)
     setBusy(false)
     if (result.error) return setError(result.error)
-    navigate(role === 'his' ? '/his' : '/identify')
+    navigate('/records')
   }
 
   return (
