@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth'
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
-  { to: '/auth?role=patient', label: 'Patient', icon: Activity },
+  { to: '/identify', label: 'Patient', icon: Activity },
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/scan', label: 'Scan', icon: ScanLine },
   { to: '/summary', label: 'Summary', icon: FileText },
@@ -16,7 +16,11 @@ const navItems = [
 export function Navbar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
-  const visibleItems = [...navItems, { to: '/records', label: 'Records', icon: ClipboardList }]
+  const visibleItems = user?.role === 'his'
+    ? [...navItems, { to: '/his', label: 'HIS Records', icon: ClipboardList }]
+    : user?.role === 'patient'
+      ? [...navItems, { to: '/records', label: 'Records', icon: ClipboardList }]
+      : navItems
 
   return (
     <nav className="glass-nav fixed top-0 left-0 right-0 z-50 px-4 py-3">
@@ -36,7 +40,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-1">
           {visibleItems.map((item) => {
             const Icon = item.icon
-            const isActive = location.pathname === item.to || (item.to.startsWith('/auth') && location.pathname === '/auth')
+            const isActive = location.pathname === item.to
             return (
               <NavLink
                 key={item.to}
@@ -64,7 +68,7 @@ export function Navbar() {
         <div className="md:hidden flex items-center gap-1">
           {visibleItems.map((item) => {
             const Icon = item.icon
-            const isActive = location.pathname === item.to || (item.to.startsWith('/auth') && location.pathname === '/auth')
+            const isActive = location.pathname === item.to
             return (
               <NavLink
                 key={item.to}
