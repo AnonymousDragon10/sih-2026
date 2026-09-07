@@ -1,6 +1,7 @@
 export interface Patient {
   id: string
   abha_id: string | null
+  aadhaar_id?: string | null
   name: string
   age: number | null
   gender: string | null

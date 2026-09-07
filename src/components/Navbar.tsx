@@ -74,7 +74,7 @@ export function Navbar() {
         </div>
       </nav>
 
-      <div className="fixed top-[60px] left-0 right-0 z-40 flex justify-center px-4">
+      <div className="fixed top-[72px] left-0 right-0 z-40 flex justify-center px-4">
         <div className="max-w-7xl w-full flex justify-end">
           {user
             ? <button onClick={() => void signOut()} className="glass-button-secondary px-3 py-2 text-xs flex items-center gap-1 mb-1"><LogOut size={14} /> Sign out</button>

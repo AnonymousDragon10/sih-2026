@@ -66,6 +66,17 @@ export function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          className="flex justify-center mb-6"
+        >
+          <div className="w-28 h-28 rounded-3xl bg-white shadow-lg flex items-center justify-center overflow-hidden">
+            <img src="/WhatsApp_Image_2026-09-05 copy.jpeg" alt="MediKiosk Logo" className="w-24 h-24 object-contain" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.05 }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-6"
         >
           <span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
@@ -95,14 +106,14 @@ export function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          className="flex flex-row gap-4 justify-center"
         >
-          <button onClick={() => navigate(user?.role === 'patient' ? '/identify' : '/auth?role=patient')} className="glass-button px-8 py-4 text-lg flex items-center gap-2 mx-auto">
+          <button onClick={() => navigate(user?.role === 'patient' ? '/identify' : '/auth?role=patient')} className="glass-button px-8 py-4 text-lg flex items-center gap-2">
             Start Patient Registration
             <ArrowRight size={20} />
           </button>
           <Link to="/chat">
-            <button className="glass-button-secondary px-8 py-4 text-lg flex items-center gap-2 mx-auto">
+            <button className="glass-button-secondary px-8 py-4 text-lg flex items-center gap-2">
               <MessageSquare size={20} />
               Try AI Chat
             </button>

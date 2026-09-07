@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Upload, ScanLine, FileText, FlaskConical, ClipboardList, Check, AlertCircle, FilePlus, Trash2, Pill, Download as DownloadIcon } from 'lucide-react'
-import { addDocument, getDocuments, getRecentRecords, saveSummary, type PatientRecord } from '../lib/api'
+import { useAuth } from '../lib/auth'
+import { getHisRecords, getPatientRecords, type PatientRecord } from '../lib/authApi'
+import { addDocument, getDocuments, saveSummary } from '../lib/api'
 import { BottleLoader } from '../components/BottleLoader'
 import { generatePrescriptionPdf } from '../lib/pdfGenerator'
 import type { ClinicalSummary } from '../types'
@@ -18,6 +20,7 @@ interface ScannedDoc {
 
 export function ScanPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [scannedDocs, setScannedDocs] = useState<ScannedDoc[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -47,8 +50,13 @@ export function ScanPage() {
         )
       })
     }
-    getRecentRecords(10).then(setPreviousRecords)
-  }, [])
+    const loadRecords = async () => {
+      if (user?.role === 'his') setPreviousRecords(await getHisRecords(50))
+      else if (user?.role === 'patient') setPreviousRecords(await getPatientRecords(10))
+      else setPreviousRecords([])
+    }
+    void loadRecords()
+  }, [user])
 
   const docTypes = [
     { value: 'prescription', label: 'Prescription', icon: FileText, color: 'from-primary-400 to-primary-600' },
@@ -175,7 +183,7 @@ export function ScanPage() {
 
   const downloadRecord = (record: PatientRecord) => {
     if (!record.summary) return
-    void generatePrescriptionPdf(record.summary.summary, record.redFlags, {
+    void generatePrescriptionPdf(record.summary.summary as unknown as ClinicalSummary, record.redFlags as unknown as RedFlag[], {
       patientName: record.patient.name,
       patientAge: record.patient.age ? String(record.patient.age) : undefined,
       patientGender: record.patient.gender || undefined,
@@ -191,7 +199,7 @@ export function ScanPage() {
     setPreviousRecords((records) =>
       records.map((record) =>
         record.session.id === editingRecord.session.id
-          ? { ...record, summary: { ...record.summary!, summary: editingDraft } }
+          ? { ...record, summary: { ...record.summary!, summary: editingDraft as unknown as Record<string, unknown> } }
           : record,
       ),
     )
@@ -372,12 +380,12 @@ export function ScanPage() {
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="font-display text-xl font-semibold text-primary-800">View Previous Patient&apos;s Records</h2>
-            <p className="text-sm text-primary-500">The 10 most recent kiosk sessions are available for authorized clinical review.</p>
+            <p className="text-sm text-primary-500">{user?.role === 'his' ? 'The 50 most recent patient sessions are available for authorized clinical review.' : 'Your 10 most recent consultation sessions are shown here.'}</p>
           </div>
-          <span className="px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">Last 10</span>
+          <span className="px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">Last {user?.role === 'his' ? 50 : 10}</span>
         </div>
         {previousRecords.length === 0 ? (
-          <div className="glass rounded-xl p-5 text-center text-sm text-primary-500">No previous patient summaries are available yet.</div>
+          <div className="glass rounded-xl p-5 text-center text-sm text-primary-500">No Records Found</div>
         ) : (
           <div className="space-y-3">
             {previousRecords.map((record) => (

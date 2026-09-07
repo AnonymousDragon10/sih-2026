@@ -78,18 +78,50 @@ export function SummaryPage() {
     await completeSession(sessionId)
     setEditing(false)
     setSaved(true)
+    const patientId = localStorage.getItem('medikiosk_patient_id')
+    let patientAge: string | undefined
+    let patientGender: string | undefined
+    let abhaId: string | undefined
+    if (patientId) {
+      const { supabase } = await import('../lib/supabase')
+      const { data: patient } = await supabase.from('patients').select('*').eq('id', patientId).maybeSingle()
+      if (patient) {
+        patientAge = patient.age ? String(patient.age) : undefined
+        patientGender = patient.gender || undefined
+        abhaId = patient.abha_id || undefined
+      }
+    }
     generatePrescriptionPdf(editedSummary, redFlags, {
       patientName: localStorage.getItem('medikiosk_patient_name') || 'Patient',
+      patientAge,
+      patientGender,
+      abhaId,
       language: localStorage.getItem('medikiosk_language') || 'en',
       mode: localStorage.getItem('medikiosk_mode') || 'allopathic',
     })
     setTimeout(() => setSaved(false), 3000)
   }
 
-  const downloadSummary = () => {
+  const downloadSummary = async () => {
     if (!summary) return
+    const patientId = localStorage.getItem('medikiosk_patient_id')
+    let patientAge: string | undefined
+    let patientGender: string | undefined
+    let abhaId: string | undefined
+    if (patientId) {
+      const { supabase } = await import('../lib/supabase')
+      const { data: patient } = await supabase.from('patients').select('*').eq('id', patientId).maybeSingle()
+      if (patient) {
+        patientAge = patient.age ? String(patient.age) : undefined
+        patientGender = patient.gender || undefined
+        abhaId = patient.abha_id || undefined
+      }
+    }
     generatePrescriptionPdf(summary, redFlags, {
       patientName: localStorage.getItem('medikiosk_patient_name') || 'Patient',
+      patientAge,
+      patientGender,
+      abhaId,
       language: localStorage.getItem('medikiosk_language') || 'en',
       mode: localStorage.getItem('medikiosk_mode') || 'allopathic',
     })
