@@ -10,30 +10,42 @@ export function IdentifyPage() {
   const navigate = useNavigate()
   const [step, setStep] = useState<'identity' | 'language' | 'consent' | 'creating'>('identity')
   const [name, setName] = useState('')
-  const [age, setAge] = useState('')
+  const [ageYears, setAgeYears] = useState('')
+  const [ageMonths, setAgeMonths] = useState('')
   const [gender, setGender] = useState('')
   const [phone, setPhone] = useState('')
   const [abhaId, setAbhaId] = useState('')
+  const [aadhaarId, setAadhaarId] = useState('')
   const [language, setLanguage] = useState<Language>('en')
   const [mode, setMode] = useState<'allopathic' | 'ayush'>('allopathic')
   const [error, setError] = useState('')
   const [progress, setProgress] = useState(0)
 
-  const handleStart = async () => {
-    if (!name.trim()) {
-      setError('Please enter your name')
-      return
-    }
+  const handleContinue = () => {
+    setError('')
+    if (!name.trim()) return setError('Please enter your name')
+    if (!ageYears && !ageMonths) return setError('Please enter age in years or months')
+    if (!gender) return setError('Please select gender')
+    if (!abhaId.trim() && !aadhaarId.trim()) return setError('Please provide either ABHA ID or Aadhaar ID')
+    if (abhaId.trim() && !/^\d{14}$/.test(abhaId.trim())) return setError('ABHA ID must be exactly 14 digits')
+    if (aadhaarId.trim() && !/^\d{12}$/.test(aadhaarId.trim())) return setError('Aadhaar ID must be exactly 12 digits')
+    setStep('language')
+  }
 
+  const handleStart = async () => {
     setStep('creating')
     setProgress(10)
 
+    const totalMonths = parseInt(ageYears || '0') * 12 + parseInt(ageMonths || '0')
+    const ageInYears = totalMonths / 12
+
     const patient = await createPatient({
       name: name.trim(),
-      age: age ? parseInt(age) : undefined,
-      gender: gender || undefined,
+      age: Math.round(ageInYears),
+      gender,
       phone: phone || undefined,
       abha_id: abhaId || undefined,
+      aadhaar_id: aadhaarId || undefined,
       language,
     })
 
@@ -112,17 +124,29 @@ export function IdentifyPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-primary-700 mb-1.5">Age</label>
-                  <input
-                    type="number"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="Age"
-                    className="glass-input w-full px-4 py-3 text-primary-800"
-                  />
+                  <label className="block text-sm font-medium text-primary-700 mb-1.5">Age *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={ageYears}
+                      onChange={(e) => setAgeYears(Math.max(0, Number(e.target.value)).toString())}
+                      placeholder="Years"
+                      className="glass-input w-full px-3 py-3 text-primary-800"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      max={11}
+                      value={ageMonths}
+                      onChange={(e) => setAgeMonths(Math.min(11, Math.max(0, Number(e.target.value))).toString())}
+                      placeholder="Months"
+                      className="glass-input w-full px-3 py-3 text-primary-800"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-primary-700 mb-1.5">Gender</label>
+                  <label className="block text-sm font-medium text-primary-700 mb-1.5">Gender *</label>
                   <select
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
@@ -153,10 +177,26 @@ export function IdentifyPage() {
                   type="text"
                   value={abhaId}
                   onChange={(e) => setAbhaId(e.target.value)}
-                  placeholder="Enter ABHA ID (optional)"
+                  placeholder="Enter your 14-digit ABHA ID"
+                  maxLength={14}
+                  inputMode="numeric"
                   className="glass-input w-full px-4 py-3 text-primary-800"
                 />
                 <p className="text-xs text-primary-400 mt-1">Link your digital health record for seamless integration</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-primary-700 mb-1.5">Aadhaar ID</label>
+                <input
+                  type="text"
+                  value={aadhaarId}
+                  onChange={(e) => setAadhaarId(e.target.value)}
+                  placeholder="Enter your 12-digit Aadhaar ID"
+                  maxLength={12}
+                  inputMode="numeric"
+                  className="glass-input w-full px-4 py-3 text-primary-800"
+                />
+                <p className="text-xs text-primary-400 mt-1">Optional if ABHA ID is provided</p>
               </div>
             </div>
 
@@ -171,9 +211,8 @@ export function IdentifyPage() {
             )}
 
             <button
-              onClick={() => setStep('language')}
-              disabled={!name.trim()}
-              className="glass-button w-full mt-6 py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleContinue}
+              className="glass-button w-full mt-6 py-3 flex items-center justify-center gap-2"
             >
               Continue <ArrowRight size={18} />
             </button>

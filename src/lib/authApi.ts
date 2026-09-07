@@ -99,9 +99,12 @@ export async function loginHisUser(username: string, password: string): Promise<
 }
 
 export async function getPatientRecords(limit: number = 10): Promise<PatientRecord[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   const { data: sessions, error } = await supabase
     .from('sessions')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -135,7 +138,26 @@ export async function getPatientRecords(limit: number = 10): Promise<PatientReco
 }
 
 export async function getHisRecords(limit: number = 50): Promise<PatientRecord[]> {
-  return getPatientRecords(limit)
+  const { data: sessions, error } = await supabase
+    .from('sessions')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !sessions || sessions.length === 0) return []
+
+  const patientIds = [...new Set(sessions.map((s) => s.patient_id))]
+  const [{ data: patients }, { data: summaries }, { data: redFlags }] = await Promise.all([
+    supabase.from('patients').select('*').in('id', patientIds),
+    supabase.from('summaries').select('*').in('session_id', sessions.map((s) => s.id)),
+    supabase.from('red_flags').select('*').in('session_id', sessions.map((s) => s.id)),
+  ])
+  const patientMap = new Map(patients?.map((p) => [p.id, p]) || [])
+  const summaryMap = new Map<string, Summary>()
+  summaries?.forEach((s) => { if (!summaryMap.has(s.session_id)) summaryMap.set(s.session_id, s as Summary) })
+  const flagsMap = new Map<string, RedFlag[]>()
+  redFlags?.forEach((f) => flagsMap.set(f.session_id, [...(flagsMap.get(f.session_id) || []), f as RedFlag]))
+  return sessions.map((session) => ({ patient: patientMap.get(session.patient_id) || ({} as Patient), session: session as Session, summary: summaryMap.get(session.id) || null, redFlags: flagsMap.get(session.id) || [] }))
 }
 
 export async function updateSummary(summaryId: string, summary: Record<string, unknown>): Promise<boolean> {

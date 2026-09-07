@@ -13,22 +13,35 @@ export function AuthPage() {
   const [identifier, setIdentifier] = useState('')
   const [name, setName] = useState('')
   const [aadhaarId, setAadhaarId] = useState('')
-  const [age, setAge] = useState('')
+  const [ageYears, setAgeYears] = useState('')
+  const [ageMonths, setAgeMonths] = useState('')
   const [gender, setGender] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const passwordRequirements = 'At least 8 characters, including one uppercase letter, one number, and one special character.'
 
   const submit = async () => {
     setError('')
     if (!identifier.trim() || !password) return setError('Please enter your login details.')
     if (isRegistering && !name.trim()) return setError('Please enter your full name.')
-    if (password.length < 6) return setError('Password must contain at least 6 characters.')
+    if (!/(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}/.test(password)) return setError('Password must be at least 8 characters and include an uppercase letter, number, and special character.')
+
+    if (isRegistering && role === 'patient') {
+      if (!/^\d{14}$/.test(identifier.trim())) return setError('ABHA ID must be exactly 14 digits.')
+      if (!aadhaarId.trim() && !identifier.trim()) return setError('Please provide either ABHA ID or Aadhaar ID.')
+      if (aadhaarId.trim() && !/^\d{12}$/.test(aadhaarId.trim())) return setError('Aadhaar ID must be exactly 12 digits.')
+      if (!ageYears && !ageMonths) return setError('Please enter age in years or months.')
+      if (!gender) return setError('Please select gender.')
+    }
+
+    const totalAge = ageYears || ageMonths ? (parseInt(ageYears || '0') * 12 + parseInt(ageMonths || '0')) / 12 : undefined
+
     setBusy(true)
     const result = role === 'patient'
       ? isRegistering
-        ? await registerPatient({ abhaId: identifier.trim(), aadhaarId: aadhaarId.trim() || undefined, name: name.trim(), age: age ? Number(age) : undefined, gender: gender || undefined, phone: phone.trim() || undefined, password })
+        ? await registerPatient({ abhaId: identifier.trim(), aadhaarId: aadhaarId.trim() || undefined, name: name.trim(), age: totalAge !== undefined ? Math.round(totalAge) : undefined, gender: gender || undefined, phone: phone.trim() || undefined, password })
         : await loginPatient(identifier.trim(), password)
       : isRegistering
         ? await registerHisUser({ username: identifier.trim(), displayName: name.trim(), password })
@@ -60,20 +73,30 @@ export function AuthPage() {
         </div>
         <div className="space-y-4">
           <label className="block text-sm font-medium text-primary-700">{role === 'his' ? 'Username' : 'ABHA ID'}
-            <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" placeholder={role === 'his' ? 'e.g. city_hospital' : 'Enter your ABHA ID'} />
+            <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" placeholder={role === 'his' ? 'e.g. city_hospital' : 'Enter your 14-digit ABHA ID'} maxLength={role === 'patient' ? 14 : undefined} inputMode={role === 'patient' ? 'numeric' : undefined} />
           </label>
           {isRegistering && <>
             <label className="block text-sm font-medium text-primary-700">Full name
               <input value={name} onChange={(e) => setName(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" placeholder="Enter full name" />
             </label>
             {role === 'patient' && <div className="grid grid-cols-2 gap-3">
-              <label className="block text-sm font-medium text-primary-700">Age<input type="number" value={age} onChange={(e) => setAge(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" /></label>
-              <label className="block text-sm font-medium text-primary-700">Gender<select value={gender} onChange={(e) => setGender(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></label>
+              <label className="block text-sm font-medium text-primary-700">Age *
+                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                  <input type="number" min={0} value={ageYears} onChange={(e) => setAgeYears(Math.max(0, Number(e.target.value)).toString())} className="glass-input w-full px-3 py-3" placeholder="Years" />
+                  <input type="number" min={0} max={11} value={ageMonths} onChange={(e) => setAgeMonths(Math.min(11, Math.max(0, Number(e.target.value))).toString())} className="glass-input w-full px-3 py-3" placeholder="Months" />
+                </div>
+              </label>
+              <label className="block text-sm font-medium text-primary-700">Gender *<select value={gender} onChange={(e) => setGender(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></label>
             </div>}
-            {role === 'patient' && <label className="block text-sm font-medium text-primary-700">Aadhaar ID <span className="font-normal text-primary-400">(use ABHA ID or Aadhaar)</span><input value={aadhaarId} onChange={(e) => setAadhaarId(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" placeholder="Optional if ABHA ID is provided" /></label>}
-            {role === 'patient' && <label className="block text-sm font-medium text-primary-700">Phone <span className="font-normal text-primary-400">(optional)</span><input value={phone} onChange={(e) => setPhone(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" /></label>}
+            {role === 'patient' && <>
+              <label className="block text-sm font-medium text-primary-700">Aadhaar ID
+                <input value={aadhaarId} onChange={(e) => setAadhaarId(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" placeholder="Enter your 12-digit Aadhaar ID" maxLength={12} inputMode="numeric" />
+                <span className="block text-xs text-primary-400 mt-1">Optional if ABHA ID is provided</span>
+              </label>
+              <label className="block text-sm font-medium text-primary-700">Phone <span className="font-normal text-primary-400">(optional)</span><input value={phone} onChange={(e) => setPhone(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" /></label>
+            </>}
           </>}
-          <label className="block text-sm font-medium text-primary-700">Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" placeholder="At least 6 characters" /></label>
+          <label className="block text-sm font-medium text-primary-700">Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="glass-input w-full px-4 py-3 mt-1.5" placeholder="Enter a secure password" /><span className="block text-xs text-primary-500 mt-1">{passwordRequirements}</span></label>
         </div>
         {error && <p className="mt-4 rounded-xl bg-error-50 px-4 py-3 text-sm text-error-700">{error}</p>}
         <button onClick={submit} disabled={busy} className="glass-button w-full py-3 mt-6 flex items-center justify-center gap-2 disabled:opacity-60">{busy ? 'Please wait...' : isRegistering ? 'Create account' : 'Sign in'} {!busy && <ArrowRight size={18} />}</button>

@@ -11,12 +11,21 @@ export function RecordsPage({ his = false }: { his?: boolean }) {
   const [records, setRecords] = useState<PatientRecord[]>([])
   const [editing, setEditing] = useState<PatientRecord | null>(null)
   const [draft, setDraft] = useState<ClinicalSummary | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
-      if (his) await callCleanupHisRecords()
-      else if (user) await callCleanupPatientRecords()
-      setRecords(his ? await getHisRecords(50) : await getPatientRecords(10))
+      setLoading(true)
+      if (his) {
+        await callCleanupHisRecords()
+        setRecords(await getHisRecords(50))
+      } else if (user?.role === 'patient') {
+        await callCleanupPatientRecords()
+        setRecords(await getPatientRecords(10))
+      } else {
+        setRecords([])
+      }
+      setLoading(false)
     }
     void load()
   }, [his, user])
@@ -40,6 +49,8 @@ export function RecordsPage({ his = false }: { his?: boolean }) {
     setEditing(null)
     setDraft(null)
   }
+
+  const canView = his || user?.role === 'patient'
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -66,10 +77,16 @@ export function RecordsPage({ his = false }: { his?: boolean }) {
         </div>
       )}
 
-      {records.length === 0 ? (
+      {!canView || loading ? (
         <div className="glass-card p-10 text-center">
           <FileText className="w-12 h-12 mx-auto text-primary-300 mb-3" />
-          <h2 className="font-semibold text-primary-800">No saved summaries yet</h2>
+          <h2 className="font-semibold text-primary-800">No Records Found</h2>
+          <p className="text-sm text-primary-600 mt-2">Sign in to view patient records.</p>
+        </div>
+      ) : records.length === 0 ? (
+        <div className="glass-card p-10 text-center">
+          <FileText className="w-12 h-12 mx-auto text-primary-300 mb-3" />
+          <h2 className="font-semibold text-primary-800">No Records Found</h2>
           <p className="text-sm text-primary-600 mt-2">Complete a consultation to see the prescription record here.</p>
         </div>
       ) : (

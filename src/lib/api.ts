@@ -7,6 +7,7 @@ export async function createPatient(data: {
   gender?: string
   phone?: string
   abha_id?: string
+  aadhaar_id?: string
   language?: string
 }): Promise<Patient | null> {
   const { data: patient, error } = await supabase
@@ -17,6 +18,7 @@ export async function createPatient(data: {
       gender: data.gender ?? null,
       phone: data.phone ?? null,
       abha_id: data.abha_id ?? null,
+      aadhaar_id: data.aadhaar_id ?? null,
       language: data.language ?? 'en',
     })
     .select()

@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 import { Activity, MessageSquare, ScanLine, FileText, Stethoscope, Shield, ArrowRight, Heart, Brain, Eye, Clock, Users, Languages } from 'lucide-react'
 
 export function HomePage() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const features = [
     {
       icon: MessageSquare,
@@ -94,12 +97,10 @@ export function HomePage() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Link to="/auth?role=patient">
-            <button className="glass-button px-8 py-4 text-lg flex items-center gap-2 mx-auto">
-              Start Patient Registration
-              <ArrowRight size={20} />
-            </button>
-          </Link>
+          <button onClick={() => navigate(user?.role === 'patient' ? '/identify' : '/auth?role=patient')} className="glass-button px-8 py-4 text-lg flex items-center gap-2 mx-auto">
+            Start Patient Registration
+            <ArrowRight size={20} />
+          </button>
           <Link to="/chat">
             <button className="glass-button-secondary px-8 py-4 text-lg flex items-center gap-2 mx-auto">
               <MessageSquare size={20} />
