@@ -61,15 +61,15 @@ export function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero Section */}
-      <section className="text-center py-12 md:py-20">
+      <section className="text-center pt-2 pb-6 md:pt-4 md:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="flex justify-center mb-6"
         >
-          <div className="w-28 h-28 rounded-3xl bg-white shadow-lg flex items-center justify-center overflow-hidden">
-            <img src="/WhatsApp_Image_2026-09-05 copy.jpeg" alt="MediKiosk Logo" className="w-24 h-24 object-contain" />
+          <div className="w-24 h-24 rounded-2xl glass-card flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+            <img src="/WhatsApp_Image_2026-09-05 copy.jpeg" alt="MediKiosk Logo" className="w-20 h-20 object-contain" />
           </div>
         </motion.div>
 
@@ -96,7 +96,7 @@ export function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-lg md:text-xl text-primary-600 max-w-2xl mx-auto mb-8"
+          className="text-base md:text-lg text-primary-600 max-w-2xl mx-auto mb-6"
         >
           AI-Powered Clinical History Software Platform for Disease Awareness.
           Comprehensive history taking before you enter the consultation room.
@@ -106,15 +106,15 @@ export function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-row gap-4 justify-center"
+          className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <button onClick={() => navigate(user?.role === 'patient' ? '/identify' : '/auth?role=patient')} className="glass-button px-8 py-4 text-lg flex items-center gap-2">
+          <button onClick={() => navigate(user?.role === 'patient' ? '/identify' : '/auth?role=patient')} className="glass-button px-6 py-3 text-base flex items-center gap-2 justify-center">
             Start Patient Registration
-            <ArrowRight size={20} />
+            <ArrowRight size={18} />
           </button>
-          <Link to="/chat">
-            <button className="glass-button-secondary px-8 py-4 text-lg flex items-center gap-2">
-              <MessageSquare size={20} />
+          <Link to="/chat" className="contents">
+            <button className="glass-button-secondary px-6 py-3 text-base flex items-center gap-2 justify-center">
+              <MessageSquare size={18} />
               Try AI Chat
             </button>
           </Link>
@@ -122,7 +122,7 @@ export function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {stats.map((stat, i) => {
           const Icon = stat.icon
           return (
@@ -142,7 +142,7 @@ export function HomePage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-8">
+      <section className="py-6">
         <motion.h2
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}

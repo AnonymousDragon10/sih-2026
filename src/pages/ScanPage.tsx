@@ -7,7 +7,7 @@ import { getHisRecords, getPatientRecords, type PatientRecord } from '../lib/aut
 import { addDocument, getDocuments, saveSummary } from '../lib/api'
 import { BottleLoader } from '../components/BottleLoader'
 import { generatePrescriptionPdf } from '../lib/pdfGenerator'
-import type { ClinicalSummary } from '../types'
+import type { ClinicalSummary, RedFlag } from '../types'
 
 interface ScannedDoc {
   id: string
@@ -396,10 +396,10 @@ export function ScanPage() {
                     {record.redFlags.length > 0 && <span className="px-2 py-0.5 rounded-full bg-error-100 text-error-700 text-xs font-semibold">Red flag</span>}
                   </div>
                   <p className="text-xs text-primary-500 mt-1">{new Date(record.session.created_at).toLocaleString()} · {record.session.mode} · {record.session.language}</p>
-                  <p className="text-xs text-primary-600 mt-1">{record.summary ? record.summary.summary.chief_complaint : 'Summary not generated'}</p>
+                  <p className="text-xs text-primary-600 mt-1">{record.summary ? String((record.summary.summary as Record<string, unknown>).chief_complaint ?? 'Summary not generated') : 'Summary not generated'}</p>
                 </div>
                 <div className="flex gap-2">
-                  {record.summary && <button onClick={() => { setEditingRecord(record); setEditingDraft(record.summary!.summary) }} className="glass-button-secondary px-3 py-2 text-xs">Edit summary</button>}
+                  {record.summary && <button onClick={() => { setEditingRecord(record); setEditingDraft(record.summary!.summary as unknown as ClinicalSummary) }} className="glass-button-secondary px-3 py-2 text-xs">Edit summary</button>}
                   {record.summary && <button onClick={() => downloadRecord(record)} className="glass-button px-3 py-2 text-xs flex items-center gap-1"><DownloadIcon /> Download PDF</button>}
                 </div>
               </div>

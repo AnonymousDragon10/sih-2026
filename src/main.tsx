@@ -22,7 +22,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <BackgroundBlobs />
         <FloatingMedicalIcons />
-        <div className="relative z-10 min-h-screen pt-20">
+        <div className="relative z-10 min-h-screen pt-16">
           <Navbar />
           <Routes>
             <Route path="/" element={<HomePage />} />
